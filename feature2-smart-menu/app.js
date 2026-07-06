@@ -22,12 +22,12 @@ app.use('/', require('./routes/menu'));
 app.get('/api/meals', async (req, res) => {
   try {
     const { caloriesMax, proteinMax, carbsMax, fatsMax } = req.query;
-    
+
     const connection = await pool.getConnection();
-    
+
     let query = 'SELECT * FROM meals WHERE 1=1';
     const params = [];
-    
+
     if (caloriesMax) {
       query += ' AND calories <= ?';
       params.push(parseInt(caloriesMax));
@@ -44,10 +44,10 @@ app.get('/api/meals', async (req, res) => {
       query += ' AND fats <= ?';
       params.push(parseInt(fatsMax));
     }
-    
+
     const [meals] = await connection.execute(query, params);
     connection.release();
-    
+
     res.json(dedupeMeals(meals));
   } catch (error) {
     console.error('Error fetching meals:', error);
@@ -55,35 +55,6 @@ app.get('/api/meals', async (req, res) => {
   }
 });
 
-// Start server after ensuring database connectivity
-async function startServer() {
-  const maxRetries = 10;
-  const retryDelayMs = 2000;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    let connection;
-    try {
-      connection = await pool.getConnection();
-      await connection.ping();
-      console.log('Connected to MySQL database.');
-      break;
-    } catch (error) {
-      console.error(`Database connection attempt ${attempt} failed:`, error.message);
-      if (attempt === maxRetries) {
-        console.error('Unable to connect to MySQL after multiple attempts. Exiting.');
-        process.exit(1);
-      }
-      await new Promise(resolve => setTimeout(resolve, retryDelayMs));
-    } finally {
-      if (connection) {
-        connection.release();
-      }
-    }
-  }
-
-  app.listen(PORT, () => {
-    console.log(`Smart Menu app running on http://localhost:${PORT}`);
-  });
-}
-
-startServer();
+app.listen(PORT, () => {
+  console.log(`Smart Menu app running on http://localhost:${PORT}`);
+});
